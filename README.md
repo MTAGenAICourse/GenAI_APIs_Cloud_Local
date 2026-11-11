@@ -5,6 +5,9 @@ call state-of-the-art models **in the cloud** (GPT-6.1 Sol, Claude Opus 5.5), th
 
 The agent labs (LangGraph, MCP, Skills) are in [OPENVINO-GENAI-SAMPLES](https://github.com/MTAGenAICourse/OPENVINO-GENAI-SAMPLES).
 
+**Step-by-step reproduction (expected output and timings for every lab) and the instructor's live demo run sheet:
+[README_Reproduce_Demo.md](README_Reproduce_Demo.md).**
+
 ## Labs
 
 Run them in order. Each lab builds on the one before it.
@@ -60,8 +63,10 @@ hf download OpenVINO/stable-diffusion-v1-5-int8-ov    --local-dir stable-diffusi
 
 ## Tips
 
-- **No proxy setup needed.** The labs never read or change proxy variables. On a home network nothing is required;
-  behind a corporate proxy, keep your existing `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY` as they are — the labs were tested that way.
+- **Proxy.** The labs never read or change proxy variables. On a home network, or with your own Azure for Students
+  resource, nothing is needed. Behind a corporate proxy, Labs 03–10 work with your existing settings; Lab 01 against
+  a Foundry resource with public access disabled needs `.openai.azure.com` in `NO_PROXY` — see
+  [README_Reproduce_Demo.md](README_Reproduce_Demo.md#before-class-15-minutes).
 - **Device.** Start on `CPU`, then try `GPU` (or `NPU`) and compare speed. The vision model is about 3× faster on an integrated GPU.
   Small models such as Whisper-base spend ~15 s compiling for the GPU, so the CPU wins there.
 - **Phi-3.5-vision stop token.** The samples set `stop_token_ids = {32007}` so the model stops at `<|end|>`; without it the model rambles.
