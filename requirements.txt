@@ -1,0 +1,20 @@
+# GenAI_APIs_Cloud_Local
+# Install:  pip install -r requirements.txt
+
+# --- Labs 01-02: cloud models ---
+openai>=2.0            # GPT-6.1 Sol via the Responses API (Microsoft Foundry v1)
+anthropic>=2.0         # Claude Opus 5.5
+python-dotenv>=1.0.0
+
+# --- Labs 03-10: local inference with OpenVINO GenAI ---
+openvino>=2025.4
+openvino-genai>=2025.4
+numpy>=1.20.0
+Pillow>=9.0.0
+opencv-python>=4.6.0   # Lab 06 video frames
+streamlit>=1.28.0      # Labs 05, 08, 10
+sounddevice>=0.4       # Labs 07, 08 microphone capture
+pytube                 # Lab 06 YouTube sources (optional)
+
+# --- Model download (pre-converted OpenVINO models, no PyTorch needed) ---
+huggingface_hub>=1.0   # provides the `hf` command

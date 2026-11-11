@@ -1,0 +1,36 @@
+# --- Secrets: never commit API keys ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# --- OpenVINO models (multi-GB; download with hf, see README) ---
+TinyLlama-1.1B-Chat-v1.0/
+Phi-3.5-vision-instruct-int4-ov/
+whisper-base/
+stable-diffusion-v1-5-int8-ov/
+stable-diffusion-ov/
+dreamlike_anime_1_0_ov/
+*-int4-ov/
+*-int8-ov/
+*-fp16-ov/
+*.bin
+*.onnx
+
+# --- Generated output ---
+output/
+generated_images/
+temp/
+temp_video_*.mp4
+image.bmp
+
+# --- Editor / OS ---
+~$*
+.vscode/
+.idea/
+.DS_Store
