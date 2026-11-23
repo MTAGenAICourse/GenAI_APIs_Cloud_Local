@@ -33,9 +33,18 @@ Run from the repo root.
 
 ## Before class (15 minutes)
 
-1. **Proxy (Lab 17 only).** If your Foundry resource is private and you are behind a corporate proxy, run
-   `$env:NO_PROXY += ",.openai.azure.com"` in the PowerShell terminal you demo from. Closing it undoes the change.
-   Other shells, the permanent variant and its undo: [Proxy: set, check, unset](../README_Reproduce_Demo.md#proxy-set-check-unset).
+1. **Proxy (Lab 17 only) — set it in the demo terminal, nowhere else.** A private Foundry resource answers
+   `403 Public access is disabled` to requests that go through the corporate proxy. In the **PowerShell** terminal
+   you will demo from:
+
+   ```powershell
+   $env:NO_PROXY += ",.openai.azure.com"     # set (this terminal only)
+   $env:NO_PROXY -split ','                  # check: the list ends with .openai.azure.com
+   ```
+
+   This changes nothing on the computer: closing the terminal is the undo (see [After class](#after-class)).
+   Do **not** use `setx` and do **not** delete `NO_PROXY` — it also holds the company list (localhost, internal
+   domains). Other shells and the permanent variant: [Proxy: set, check, unset](../README_Reproduce_Demo.md#proxy-set-check-unset).
    Students on their own Azure for Students resources don't need this.
 2. **Activate the environment and check the setup** (this is also the Lab 23 demo, so leave the output on screen):
 
@@ -202,10 +211,25 @@ streamlit run Agents_MCP_Skills/Agents_lab24_multimodal_agent.py
 
 ## After class
 
-- **Proxy:** close the demo terminal. If you made the permanent change (Option B), run the
-  ["After class — remove only that entry"](../README_Reproduce_Demo.md#option-b--permanent-for-your-windows-user)
-  command, then open a new terminal and check that `NO_PROXY` no longer lists `.openai.azure.com`.
-- Stop any Streamlit apps still running (Ctrl+C in their terminals).
+1. **Proxy — undo.** Close the demo terminal. That is all you need after the session-only setting.
+   To undo in a terminal you keep open:
+
+   ```powershell
+   $env:NO_PROXY = ($env:NO_PROXY -split ',' | ? { $_ -ne '.openai.azure.com' }) -join ','
+   ```
+
+2. **Only if you made the permanent change** (Option B in the Part 1 guide), remove just that entry and keep the rest:
+
+   ```powershell
+   $v = [Environment]::GetEnvironmentVariable('NO_PROXY','User')
+   [Environment]::SetEnvironmentVariable('NO_PROXY', (($v -split ',') | ? { $_ -and $_ -ne '.openai.azure.com' }) -join ',', 'User')
+   ```
+
+3. **Verify in a new terminal:** `[Environment]::GetEnvironmentVariable('NO_PROXY','User')` must **not** contain
+   `.openai.azure.com` and must still contain your original entries (localhost, 127.0.0.1, your company domains).
+   If entries are missing, restore your backup:
+   `[Environment]::SetEnvironmentVariable('NO_PROXY', (Get-Content "$HOME\no_proxy_backup.txt" -Raw).Trim(), 'User')`.
+4. Stop any Streamlit apps still running (Ctrl+C in their terminals).
 
 ---
 
@@ -213,7 +237,7 @@ streamlit run Agents_MCP_Skills/Agents_lab24_multimodal_agent.py
 
 | Symptom | Fix |
 | --- | --- |
-| Lab 17: `403 Public access is disabled` | The terminal still uses the corporate proxy. Add `.openai.azure.com` to `NO_PROXY` in this terminal ([how](../README_Reproduce_Demo.md#proxy-set-check-unset)). |
+| Lab 17: `403 Public access is disabled` | This terminal still uses the corporate proxy: `$env:NO_PROXY += ",.openai.azure.com"`, then re-run. Undo: see [After class](#after-class). |
 | Lab 17: `404 DeploymentNotFound` | `AZURE_OPENAI_DEPLOYMENT` must name a deployment that exists on your resource. |
 | Lab 18: `server-side fallback not enabled` | Expected on some workspaces; the script continues without it. |
 | Lab 16/17/18: `Model folder not found` | Download the model into the repo root, or set `LAB_MODELS_DIR` to where it is. |
