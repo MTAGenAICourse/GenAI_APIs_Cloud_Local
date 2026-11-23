@@ -21,9 +21,12 @@ python Agents_MCP_Skills/Agents_lab18_mcp_agent_claude.py            # Claude Op
 1. Finish the Part 1 setup in the repo root `README.md` (venv, models).
 2. Install the Part 2 packages from the repo root: `pip install -r Agents_MCP_Skills/requirements.txt`.
    It adds `mcp` (server and client SDK), `requests` and `duckduckgo_search` (web search in Labs 14–15).
+   `mcp` is pinned to `mcp>=1.20,<2`: mcp 2.x renamed `FastMCP` and changed the low-level server API, so
+   Labs 14–18 break on 2.x.
 3. For the MCP Inspector (`mcp dev`), also run `pip install "mcp[cli]"`.
 4. Keys in `.env` in the repo root:
-   - Lab 17: the same keys as Lab 01: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`.
+   - Labs 14–15 (`ask_cloud_model`, `image2mermaid`) and Lab 17: the same keys as Lab 01: `AZURE_OPENAI_ENDPOINT`,
+     `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`.
    - Lab 18: `ANTHROPIC_API_KEY`, as in Lab 02.
 5. Lab 16 uses the model folders from Part 1: `Phi-3.5-vision-instruct-int4-ov`, `whisper-base`,
    `stable-diffusion-v1-5-int8-ov`, all in the repo root.
@@ -168,7 +171,7 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
-server = Server("wcs-skills-server")
+server = Server("course-skills-server")
 
 @server.list_tools()                      # answers tools/list
 async def list_tools() -> list[Tool]:
@@ -190,17 +193,25 @@ async def main():
         await server.run(read_stream, write_stream, ...)
 ```
 
-| Tool | Works outside Intel? |
-| --- | --- |
-| `calculator` | yes |
-| `text_analyzer` | yes |
-| `web_search` | yes (weather questions use wttr.in; others try DuckDuckGo, then Google, then open a browser) |
-| `image2mermaid` | no, needs Intel-internal skills and credentials |
-| `chai_wifi_qna`, `chai_bluetooth_qna`, `chai_general_qna` | no, need `CHAI_SDK_CLIENT_SECRET` (Intel-internal, optional) |
+Lab 14 offers five tools:
+
+| Tool | What it does | Needs |
+| --- | --- | --- |
+| `image2mermaid` | Turns a diagram image into Mermaid code with the cloud model's vision (`image_path`, optional `diagram_type`) | the Lab 01 `.env` keys |
+| `ask_cloud_model` | Answers a technical question (Wi-Fi, Bluetooth, AI, ...) with your Foundry deployment | the Lab 01 `.env` keys |
+| `calculator` | Evaluates an arithmetic expression | nothing |
+| `text_analyzer` | Word count, simple sentiment, keywords or a one-line summary | nothing |
+| `web_search` | Weather questions use wttr.in; others try DuckDuckGo, then Google, then open a browser | internet |
+
+The two cloud tools call `cloud_model.py` (next to the labs): `ask_cloud_model(question)` and
+`image_to_mermaid(image_path, diagram_type)` on your Microsoft Foundry deployment (Azure OpenAI v1 API, Responses
+API, reasoning effort `low`). Measured on 2026-11-23 on the instructor laptop with deployment `gpt-5.4`:
+"What is MLD in Wi-Fi 7?" answered in 4.4 s; a 3-box flowchart image became
+`flowchart LR  Camera --> VLM --> Decision` in 2.7 s.
 
 ### Client (Lab 15)
 
-1. Click **🔍 Discover MCP Tools** in the sidebar. The client sends `tools/list` and shows seven tools with their schemas.
+1. Click **🔍 Discover MCP Tools** in the sidebar. The client sends `tools/list` and shows five tools with their schemas.
 2. Type a request in **Your request:** and click **🚀 Execute via MCP**.
 3. A regex router picks the tool (as in Lab 13). The client opens a stdio session, sends `tools/call`, and shows
    the JSON reply under **Raw MCP Response**.
@@ -214,9 +225,11 @@ async with stdio_client(server_params) as (read, write):
         result = await session.call_tool("calculator", {"expression": "(17 + 25) * 2"})
 ```
 
-Try `calculate (17 + 25) * 2` (returns 84) and `What is the capital of France?` (goes to `web_search`).
-Each discovery and each call starts a fresh server subprocess; that is simple but slower than keeping one session open.
-The `chai_*` tools are called directly as a subprocess, not through MCP, because those calls are long.
+Try `calculate (17 + 25) * 2` (returns 84), `What is the capital of France?` (goes to `web_search`) and
+`What is MLD in WiFi 7?` (goes to `ask_cloud_model`). Questions about Wi-Fi, Bluetooth, MLD or LE Audio, and
+requests that start with "explain", go to `ask_cloud_model`. Every tool, including the cloud ones, is called
+through MCP. Each discovery and each call starts a fresh server subprocess; that is simple but slower than keeping
+one session open.
 
 ---
 
@@ -337,13 +350,14 @@ Both models asked for both tools in the same turn. The time is printed at the en
 | Problem | Fix |
 | --- | --- |
 | `ModuleNotFoundError: mcp` | `pip install -r Agents_MCP_Skills/requirements.txt` |
-| Lab 15: "Failed to discover tools" | Run from the repo root; check that `Agents_lab14_mcp_skills_server.py` is next to the client. |
-| Lab 15: chai or image2mermaid errors | Expected outside Intel; use the other tools. |
+| Labs 14–18: `ImportError` for `FastMCP` or `mcp.server` | You have mcp 2.x (`pip show mcp`). The labs need 1.x: `pip install "mcp>=1.20,<2"`. |
+| Lab 15: "Failed to discover tools" | Run from the repo root; check that `Agents_lab14_mcp_skills_server.py` and `cloud_model.py` are next to the client. |
+| Lab 15: `ask_cloud_model` or `image2mermaid` errors | Set the Lab 01 `.env` keys (`AZURE_OPENAI_*`). Behind a proxy with a private Foundry resource, add `.openai.azure.com` to `NO_PROXY` (see Setup). |
 | Lab 16: "Model folder not found" | Download the model into the repo root, or set `LAB_MODELS_DIR`. |
-| Lab 17: `403 Public access is disabled` | Add `.openai.azure.com` to `NO_PROXY` and open a new terminal (see Setup). |
+| Labs 15, 17: `403 Public access is disabled` | Add `.openai.azure.com` to `NO_PROXY` and open a new terminal (see Setup). |
 | Lab 18: authentication error | Set `ANTHROPIC_API_KEY` in `.env`. |
 | `mcp dev` fails | Install Node.js; the Inspector is a Node app. |
 | Streamlit port in use | `streamlit run ... --server.port 8502` |
 
 Further reading: [MCP specification](https://modelcontextprotocol.io) ·
-[MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk). Next: `README_Skills.md` (Labs 19–23).
+[MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk). Next: `README_Skills.md` (Labs 19–22).

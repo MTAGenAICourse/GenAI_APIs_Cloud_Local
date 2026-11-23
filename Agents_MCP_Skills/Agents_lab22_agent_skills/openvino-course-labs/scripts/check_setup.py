@@ -1,5 +1,5 @@
 """
-Check that a laptop is ready for the GenAI_APIs_Cloud_Local labs (01-24).
+Check that a laptop is ready for the GenAI_APIs_Cloud_Local labs (01-23).
 
 Prints one line per check: OK, MISSING or WARN. Never prints secret values.
 Run from anywhere:  python check_setup.py [--repo PATH]
@@ -12,16 +12,16 @@ from pathlib import Path
 
 MODELS = {
     "TinyLlama-1.1B-Chat-v1.0": "Lab 03",
-    "Phi-3.5-vision-instruct-int4-ov": "Labs 04-06, 11, 12, 16, 24",
+    "Phi-3.5-vision-instruct-int4-ov": "Labs 04-06, 11, 12, 16, 23",
     "whisper-base": "Labs 07, 08, 16",
     "stable-diffusion-v1-5-int8-ov": "Labs 09, 10, 16",
     "Qwen3-1.7B-int4-ov": "Lab 20 (local brain)",
 }
-PACKAGES = {"openvino_genai": "Labs 03-24", "openai": "Labs 01, 17, 20", "anthropic": "Labs 02, 18",
-            "streamlit": "UI labs", "langgraph": "Labs 12, 20, 21", "mcp": "Labs 14-18",
+PACKAGES = {"openvino_genai": "Labs 03-23", "openai": "Labs 01, 14, 15, 17, 20, 21", "anthropic": "Labs 02, 18",
+            "streamlit": "UI labs", "langgraph": "Labs 12, 20", "mcp": "Labs 14-18",
             "dotenv": "cloud labs"}
-ENV_KEYS = {"AZURE_OPENAI_ENDPOINT": "Labs 01, 17", "AZURE_OPENAI_API_KEY": "Labs 01, 17",
-            "AZURE_OPENAI_DEPLOYMENT": "Labs 01, 17", "ANTHROPIC_API_KEY": "Labs 02, 18"}
+ENV_KEYS = {"AZURE_OPENAI_ENDPOINT": "Labs 01, 14, 15, 17, 20, 21", "AZURE_OPENAI_API_KEY": "Labs 01, 14, 15, 17, 20, 21",
+            "AZURE_OPENAI_DEPLOYMENT": "Labs 01, 14, 15, 17, 20, 21", "ANTHROPIC_API_KEY": "Labs 02, 18"}
 
 
 def find_repo(start):

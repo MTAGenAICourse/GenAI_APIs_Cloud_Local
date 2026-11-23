@@ -5,7 +5,7 @@ How to reproduce, or demo live, every lab in part 1 of `PAGA-2_HandsOn_v6.pptx` 
 - **Students:** use [Reproduce every lab](#reproduce-every-lab). It is one table with a command and the expected result for each lab.
 - **Instructor:** use the [live demo run sheet](#live-demo-run-sheet). For each lab it gives what to show, the talking points and how long it takes.
 
-The agent labs (slides 15+) are in [OPENVINO-GENAI-SAMPLES](https://github.com/MTAGenAICourse/OPENVINO-GENAI-SAMPLES).
+The agent, MCP and Skills labs (Labs 11–23, PAGA-3 deck) are in [Agents_MCP_Skills/](Agents_MCP_Skills/README.md), with their own run sheet: [README_Workshop_Demo.md](Agents_MCP_Skills/README_Workshop_Demo.md).
 
 All timings were measured on a Windows 11 laptop with an Intel CPU, an integrated GPU and an NPU, using OpenVINO GenAI 2025.4.
 Labs 03–10 were re-run from this repo on 2026-11-11. Your numbers will differ: record them in the homework table.
@@ -68,7 +68,7 @@ Slide numbers are the page numbers printed in the slide footers.
 
 ### Before class (15 minutes)
 
-1. **Bypass the corporate proxy for Azure OpenAI (Labs 01 and 17 only).** A Foundry resource with public access
+1. **Bypass the corporate proxy for Azure OpenAI (Lab 01 and agent Labs 14–15, 17, 20, 21).** A Foundry resource with public access
    disabled only accepts traffic from its private network. Through the corporate proxy (`HTTPS_PROXY`) Lab 01 fails
    with `403 Public access is disabled`. Add `.openai.azure.com` to `NO_PROXY` **in the terminal you will demo from**:
 
@@ -226,7 +226,7 @@ python GenAI_APIs_lab07_speech_basics.py --record 5
 
 ## Proxy: set, check, unset
 
-Only for Labs 01 and 17, and only when your Foundry resource is private and the laptop is behind a corporate proxy.
+Only for Lab 01 and the agent labs that call your Foundry deployment (14–15, 17, 20, 21), and only when your Foundry resource is private and the laptop is behind a corporate proxy.
 
 ### Option A — this terminal only (recommended)
 

@@ -1,23 +1,21 @@
 """
-Lab 22 - Skills demo app: routes requests to built-in and .claude/skills skills.
+Lab 21 - Skills demo app: routes requests to built-in skills and to your cloud model.
 
 Run from the repo root:
-    streamlit run Agents_MCP_Skills/Agents_lab22_skills_demo.py
+    streamlit run Agents_MCP_Skills/Agents_lab21_skills_demo.py
 
-Try: calculate (3 + 4) * 6 (answer 42) and a web search. ChAI/Image2Mermaid skills are Intel-only.
+Try: calculate (3 + 4) * 6 (answer 42), "What is MLD in WiFi 7?" (cloud model) and a web search.
+The cloud skills (ask_cloud_model, image2mermaid) use your Foundry deployment: the Lab 01 .env keys.
 """
 # 🎯 Skills-Based Agentic Demo
 # ============================
-# A demonstration of agentic AI that routes user requests to real skills
-# from the .claude/skills directory.
+# A demonstration of agentic AI that routes user requests to real skills.
 # 
 # This demo integrates:
 # - 🖼️ Image2Mermaid: Convert diagram images to Mermaid code
-# - 💬 ChAI Assistant: Query Intel AI Assistants (WiFi_QnA, BT_QnA, etc.)
+# - 💬 Cloud model: technical questions answered by your Foundry deployment (Azure OpenAI)
 # - 🔧 Built-in utilities: Calculator, text analysis, etc.
 # 
-# Author: Skills Integration Demo
-# Date: February 2026
 
 
 import streamlit as st
@@ -25,7 +23,6 @@ import json
 import re
 import os
 import sys
-import subprocess
 import tempfile
 from typing import Dict, List, Any, Callable, Optional
 from dataclasses import dataclass, field
@@ -40,16 +37,9 @@ load_dotenv()
 # 📁 SKILLS CONFIGURATION
 # ============================================================================
 
-# Path to skills directory
-# Look in the repo root first (where .claude/ normally lives), then next to this file
-_here = Path(__file__).resolve().parent
-SKILLS_DIR = next((d for d in (_here.parent / ".claude" / "skills", _here / ".claude" / "skills") if d.is_dir()),
-                  _here.parent / ".claude" / "skills")
-MINIPYTHON = r"C:\MiniPython\python.exe"
-
-# Fallback to system Python if MiniPython not available
-if not os.path.exists(MINIPYTHON):
-    MINIPYTHON = sys.executable
+# Cloud skills use your Microsoft Foundry deployment (Azure OpenAI v1 API, Lab 01 .env keys)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cloud_model import ask_cloud_model, image_to_mermaid, deployment
 
 # ============================================================================
 # 📚 EDUCATIONAL INTRO
@@ -65,9 +55,8 @@ based on your natural language request.
 
 | Skill | Description | Example Request |
 |-------|-------------|-----------------|
-| 🖼️ **Image2Mermaid** | Convert diagrams to Mermaid code | "Convert this image to mermaid" |
-| 💬 **ChAI WiFi QnA** | Ask about Intel WiFi products | "What is MLD in WiFi?" |
-| 💬 **ChAI BT QnA** | Ask about Intel Bluetooth | "Explain LE Audio" |
+| 🖼️ **Image2Mermaid** | Convert diagrams to Mermaid code (cloud model vision) | "Convert this image to mermaid" |
+| 💬 **Ask the cloud model** | Technical questions, answered by your Foundry deployment | "What is MLD in WiFi 7?" |
 | 🔢 **Calculator** | Mathematical calculations | "Calculate 125 * 4" |
 | 📊 **Text Analyzer** | Analyze text properties | "Analyze this text for sentiment" |
 
@@ -134,134 +123,15 @@ class Tool:
 
 def image2mermaid_skill(image_path: str, quick_mode: bool = True, diagram_type: str = "") -> Dict[str, Any]:
     """
-    Convert an image to Mermaid diagram code using the Doc2Md-image2mermaid skill.
-    
-    This calls the actual skill from .claude/skills/Doc2Md-image2mermaid/
+    Convert a diagram image to Mermaid code with the cloud model's vision input.
+    (quick_mode is kept for compatibility; the cloud model always answers in one step.)
     """
-    skill_script = SKILLS_DIR / "Doc2Md-image2mermaid" / "image2mermaid.py"
-    
-    if not skill_script.exists():
-        return {
-            "error": f"Skill not found at {skill_script}",
-            "success": False
-        }
-    
-    if not os.path.exists(image_path):
-        return {
-            "error": f"Image file not found: {image_path}",
-            "success": False
-        }
-    
-    # Create output directory
-    output_dir = tempfile.mkdtemp(prefix="mermaid_")
-    
-    # Build command
-    cmd = [MINIPYTHON, str(skill_script), image_path, "-o", output_dir]
-    
-    if quick_mode:
-        cmd.append("-q")
-    
-    if diagram_type:
-        cmd.extend(["-t", diagram_type])
-    
-    try:
-        # Run the skill
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=120,
-            cwd=str(SKILLS_DIR / "Doc2Md-image2mermaid")
-        )
-        
-        # Look for generated mermaid files
-        mermaid_files = list(Path(output_dir).glob("*.mermaid")) + list(Path(output_dir).glob("*.md"))
-        
-        if mermaid_files:
-            # Read the first mermaid file
-            with open(mermaid_files[0], 'r', encoding='utf-8') as f:
-                mermaid_content = f.read()
-            
-            return {
-                "success": True,
-                "mermaid_code": mermaid_content,
-                "output_file": str(mermaid_files[0]),
-                "image_path": image_path,
-                "stdout": result.stdout[-500:] if len(result.stdout) > 500 else result.stdout
-            }
-        else:
-            return {
-                "success": False,
-                "error": "No mermaid output generated",
-                "stdout": result.stdout,
-                "stderr": result.stderr
-            }
-            
-    except subprocess.TimeoutExpired:
-        return {"error": "Skill execution timed out (120s)", "success": False}
-    except Exception as e:
-        return {"error": str(e), "success": False}
+    return image_to_mermaid(image_path, diagram_type)
 
 
-def chai_assistant_skill(query: str, usecase: str = "WiFi_QnA") -> Dict[str, Any]:
-    """
-    Query the ChAI Assistant using the ChAI-Assistant skill.
-    
-    Available usecases: WiFi_QnA, BT_QnA, TOP_QnA, ICA_QnA, QnA
-    """
-    skill_script = SKILLS_DIR / "ChAI-Assistant" / "ask_chai_tool.py"
-    
-    if not skill_script.exists():
-        return {
-            "error": f"Skill not found at {skill_script}",
-            "success": False
-        }
-    
-    # Check for client secret
-    client_secret = os.environ.get("CHAI_SDK_CLIENT_SECRET")
-    if not client_secret:
-        return {
-            "error": "CHAI_SDK_CLIENT_SECRET environment variable not set. Please configure your ChAI credentials.",
-            "success": False
-        }
-    
-    # Build command
-    cmd = [
-        MINIPYTHON, str(skill_script),
-        "--query", query,
-        "--usecase", usecase
-    ]
-    
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=90,
-            cwd=str(Path(__file__).parent),
-            env={**os.environ, "CHAI_SDK_CLIENT_SECRET": client_secret}
-        )
-        
-        if result.returncode == 0:
-            # Parse the response
-            response_text = result.stdout.strip()
-            return {
-                "success": True,
-                "response": response_text,
-                "usecase": usecase,
-                "query": query
-            }
-        else:
-            return {
-                "success": False,
-                "error": result.stderr or "Unknown error",
-                "stdout": result.stdout
-            }
-            
-    except subprocess.TimeoutExpired:
-        return {"error": "ChAI request timed out (90s)", "success": False}
-    except Exception as e:
-        return {"error": str(e), "success": False}
+def ask_cloud_model_skill(query: str) -> Dict[str, Any]:
+    """Answer a technical question with your Foundry deployment (Azure OpenAI v1 API)."""
+    return ask_cloud_model(query)
 
 
 def calculator_skill(expression: str) -> Dict[str, Any]:
@@ -361,7 +231,7 @@ def web_search_skill(query: str, num_results: int = 5) -> Dict[str, Any]:
             
             # Use wttr.in for weather (free, no API key needed)
             weather_url = f"https://wttr.in/{location}?format=j1"
-            # Use proxy for external sites (Intel corporate network)
+            # Use proxy for external sites (only if HTTP(S)_PROXY is set, e.g. on a corporate network)
             proxy = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY')
             proxies = {"http": proxy, "https": proxy} if proxy else None
             response = requests.get(
@@ -417,7 +287,7 @@ def web_search_skill(query: str, num_results: int = 5) -> Dict[str, Any]:
     try:
         from duckduckgo_search import DDGS
         
-        # Use proxy for external sites (Intel corporate network)
+        # Use proxy for external sites (only if HTTP(S)_PROXY is set, e.g. on a corporate network)
         proxy = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY')
         with DDGS(proxy=proxy) as ddgs:
             results = list(ddgs.text(query_clean, max_results=num_results))
@@ -453,7 +323,7 @@ def web_search_skill(query: str, num_results: int = 5) -> Dict[str, Any]:
         }
         
         search_url = f"https://www.google.com/search?q={quote_plus(query_clean)}&num={num_results}&hl=en"
-        # Use proxy for external sites (Intel corporate network)
+        # Use proxy for external sites (only if HTTP(S)_PROXY is set, e.g. on a corporate network)
         proxy = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY')
         proxies = {"http": proxy, "https": proxy} if proxy else None
         response = requests.get(search_url, headers=headers, timeout=10, proxies=proxies)
@@ -519,7 +389,7 @@ def create_tool_registry() -> Dict[str, Tool]:
     tools = {
         "image2mermaid": Tool(
             name="image2mermaid",
-            description="Convert a diagram image (PNG, JPG, etc.) to Mermaid diagram code. Use this when the user wants to convert an image to mermaid, create a mermaid diagram from an image, or turn a picture/diagram/flowchart into code.",
+            description="Convert a diagram image (PNG, JPG, etc.) to Mermaid diagram code with the cloud model's vision. Use this when the user wants to convert an image to mermaid, create a mermaid diagram from an image, or turn a picture/diagram/flowchart into code.",
             parameters=[
                 ToolParameter("image_path", "string", "Full path to the image file to convert"),
                 ToolParameter("quick_mode", "boolean", "Use quick single-step conversion (faster)", required=False),
@@ -529,36 +399,16 @@ def create_tool_registry() -> Dict[str, Tool]:
             category="conversion"
         ),
         
-        "chai_wifi": Tool(
-            name="chai_wifi",
-            description="Ask questions about Intel WiFi products using the ChAI WiFi_QnA assistant. Use this for WiFi-related questions, MLD, 802.11, WiFi 6/7, wireless networking.",
+        "ask_cloud_model": Tool(
+            name="ask_cloud_model",
+            description="Answer a technical question (Wi-Fi, Bluetooth, networking, AI, engineering) with the course's cloud model (Azure OpenAI on Microsoft Foundry).",
             parameters=[
-                ToolParameter("query", "string", "The question to ask about Intel WiFi products")
+                ToolParameter("query", "string", "The question to answer")
             ],
-            function=lambda query: chai_assistant_skill(query, "WiFi_QnA"),
-            category="intel_assistant"
+            function=ask_cloud_model_skill,
+            category="cloud_model"
         ),
-        
-        "chai_bluetooth": Tool(
-            name="chai_bluetooth", 
-            description="Ask questions about Intel Bluetooth products using the ChAI BT_QnA assistant. Use this for Bluetooth-related questions, LE Audio, BT SIG specifications.",
-            parameters=[
-                ToolParameter("query", "string", "The question to ask about Intel Bluetooth products")
-            ],
-            function=lambda query: chai_assistant_skill(query, "BT_QnA"),
-            category="intel_assistant"
-        ),
-        
-        "chai_general": Tool(
-            name="chai_general",
-            description="Ask general questions about Intel Wireless products (WiFi, Bluetooth, TOP) using the ChAI QnA assistant.",
-            parameters=[
-                ToolParameter("query", "string", "The question to ask about Intel Wireless products")
-            ],
-            function=lambda query: chai_assistant_skill(query, "QnA"),
-            category="intel_assistant"
-        ),
-        
+
         "calculator": Tool(
             name="calculator", 
             description="Perform mathematical calculations. Use this when the user wants to calculate, compute, or do math operations.",
@@ -583,7 +433,7 @@ def create_tool_registry() -> Dict[str, Tool]:
         
         "web_search": Tool(
             name="web_search",
-            description="Search the web for general knowledge questions. Use this when the user asks about topics NOT related to Intel products, WiFi, or Bluetooth - such as history, science, current events, definitions, 'what is', 'who is', 'how does', general facts, etc.",
+            description="Search the web for general knowledge questions. Use this for general facts (not Wi-Fi/Bluetooth technical questions, which go to ask_cloud_model) - such as history, science, current events, definitions, 'what is', 'who is', 'how does', general facts, etc.",
             parameters=[
                 ToolParameter("query", "string", "The search query for web search"),
                 ToolParameter("num_results", "number", "Number of results to return (default 5)", required=False)
@@ -625,37 +475,18 @@ class SkillsRouter:
                 "extract": lambda m, text: self._extract_image_path(text)
             },
             
-            # WiFi questions
+            # Technical questions -> cloud model
             {
-                "tool": "chai_wifi",
+                "tool": "ask_cloud_model",
                 "patterns": [
-                    r"(?:what|explain|describe|tell me about).*(?:wifi|wi-fi|802\.11|mld|wireless|wlan)",
-                    r"(?:wifi|wi-fi|802\.11|mld|wireless|wlan).*(?:what|how|why|when)",
+                    r"(?:what|explain|describe|tell me about).*(?:wifi|wi-fi|802\.11|mld|wireless|wlan|bluetooth|\bbt\b|le audio|\bble\b)",
+                    r"(?:wifi|wi-fi|802\.11|mld|wireless|wlan|bluetooth|le audio|\bble\b).*(?:what|how|why|when)",
                     r"wifi\s*\d+",  # WiFi 6, WiFi 7
+                    r"^(?:explain|ask the (?:cloud )?model)\b",
                 ],
                 "extract": lambda m, text: {"query": text}
             },
-            
-            # Bluetooth questions
-            {
-                "tool": "chai_bluetooth",
-                "patterns": [
-                    r"(?:what|explain|describe|tell me about).*(?:bluetooth|bt|le audio|ble)",
-                    r"(?:bluetooth|bt|le audio|ble).*(?:what|how|why|when)",
-                ],
-                "extract": lambda m, text: {"query": text}
-            },
-            
-            # General Intel wireless
-            {
-                "tool": "chai_general",
-                "patterns": [
-                    r"(?:intel|wireless).*(?:product|specification|requirement)",
-                    r"(?:what|explain).*(?:intel|wreq|dcr)",
-                ],
-                "extract": lambda m, text: {"query": text}
-            },
-            
+
             # Calculator
             {
                 "tool": "calculator",
@@ -745,8 +576,7 @@ class SkillsRouter:
         # Keyword fallback
         keyword_mapping = {
             "image2mermaid": ["mermaid", "diagram", "flowchart", "convert image"],
-            "chai_wifi": ["wifi", "wi-fi", "802.11", "wireless", "mld"],
-            "chai_bluetooth": ["bluetooth", "bt", "le audio", "ble"],
+            "ask_cloud_model": ["wifi", "wi-fi", "802.11", "wireless", "mld", "bluetooth", "le audio", "ble"],
             "calculator": ["calculate", "compute", "math", "+", "-", "*", "/"],
             "text_analyzer": ["analyze", "sentiment", "count", "keywords"],
             "web_search": ["search", "look up", "find", "google", "what is", "who is", "tell me about"],
@@ -776,7 +606,7 @@ class SkillsRouter:
         """Get default parameters for a tool based on text"""
         if tool_name == "image2mermaid":
             return self._extract_image_path(text)
-        elif tool_name in ["chai_wifi", "chai_bluetooth", "chai_general"]:
+        elif tool_name == "ask_cloud_model":
             return {"query": text}
         elif tool_name == "calculator":
             return {"expression": self._extract_math(text)}
@@ -822,9 +652,7 @@ def display_skill_cards(tools: Dict[str, Tool]):
     cols = st.columns(3)
     skill_icons = {
         "image2mermaid": "🖼️",
-        "chai_wifi": "📶",
-        "chai_bluetooth": "🔵",
-        "chai_general": "💬",
+        "ask_cloud_model": "💬",
         "calculator": "🔢",
         "text_analyzer": "📊"
     }
@@ -845,7 +673,7 @@ def display_skill_cards(tools: Dict[str, Tool]):
 
 def main():
     st.set_page_config(
-        page_title="🎯 WCS Skills Based Agentic Flows",
+        page_title="🎯 Course Skills: Agentic Flows",
         page_icon="🎯",
         layout="wide",
         initial_sidebar_state="expanded"
@@ -949,7 +777,7 @@ def main():
             st.rerun()
     
     # Main content
-    st.title("🎯 WCS Skills Based Agentic Flows")
+    st.title("🎯 Course Skills: Agentic Flows")
     st.markdown("### Real skills, intelligent routing, natural language")
     
     # Introduction
@@ -1049,13 +877,13 @@ def main():
                         with st.expander("Error details"):
                             st.text(result_data.get('stderr'))
             
-            elif routing_result['tool'].startswith("chai_"):
+            elif routing_result['tool'] == "ask_cloud_model":
                 if result_data.get("success"):
-                    st.success(f"✅ Response from {result_data.get('usecase', 'ChAI')}")
+                    st.success(f"✅ Answer from the cloud model ({result_data.get('model', deployment())})")
                     st.markdown("**Answer:**")
                     st.markdown(result_data.get("response", "No response"))
                 else:
-                    st.error(f"❌ ChAI Error: {result_data.get('error')}")
+                    st.error(f"❌ Cloud model error: {result_data.get('error')}")
             
             elif routing_result['tool'] == "calculator":
                 if result_data.get("success"):
@@ -1126,8 +954,8 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; color: gray; padding: 20px;'>
-        <p>🎯 Skills-Based Agentic Demo - Powered by .claude/skills</p>
-        <p>Skills: Image2Mermaid | ChAI Assistants | Calculator | Text Analysis</p>
+        <p>🎯 Skills-Based Agentic Demo - built-in skills + your cloud model</p>
+        <p>Skills: Image2Mermaid | Cloud model | Calculator | Text Analysis | Web search</p>
     </div>
     """, unsafe_allow_html=True)
 

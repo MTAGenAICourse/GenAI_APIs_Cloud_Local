@@ -33,7 +33,14 @@ from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
 
-ROOT = Path(__file__).resolve().parent.parent      # repo root: model folders and Data/ live here
+# Import the heavy native libraries at start-up, before the MCP server begins reading stdin.
+# On Windows, importing them later (inside a tool call) can block on the stdin pipe and hang the server.
+import numpy as np            # noqa: E402
+import openvino as ov         # noqa: E402
+import openvino_genai as ov_genai  # noqa: E402
+from PIL import Image         # noqa: E402
+
+ROOT =Path(__file__).resolve().parent.parent      # repo root: model folders and Data/ live here
 DEVICE = os.environ.get("LAB_DEVICE", "CPU")
 MODELS_DIR = Path(os.environ.get("LAB_MODELS_DIR", ROOT))   # override if your models live elsewhere
 MODELS = {

@@ -6,19 +6,18 @@ Run from the repo root:
 
 Try: calculate (17 + 25) * 2   (the calculator tool returns 84).
 """
-# 🎯 WCS Skills Based Agentic Flows - MCP Edition
+# 🎯 Course Skills: Agentic Flows - MCP Edition
 # ================================================
 # A demonstration of agentic AI using the Model Context Protocol (MCP)
 # to discover and execute skills.
 # 
 # This version uses a HYBRID approach:
-# - ChAI skills: Direct subprocess call (more reliable for long-running calls)
 # - Other tools: MCP server via stdio transport
 # 
 # Run this client:
 #     streamlit run Agents_lab15_mcp_skills_client.py
 # 
-# Author: WCS Skills MCP Client
+# Author: course MCP client
 # Date: February 2026
 
 
@@ -28,7 +27,6 @@ import asyncio
 import re
 import os
 import sys
-import subprocess
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -47,51 +45,8 @@ from mcp.client.stdio import stdio_client, StdioServerParameters
 # ============================================================================
 
 MCP_SERVER_SCRIPT = Path(__file__).parent / "Agents_lab14_mcp_skills_server.py"
-SKILLS_DIR = Path(__file__).parent / ".claude" / "skills"
 PYTHON_EXECUTABLE = sys.executable
 
-# Try to find MiniPython for skill execution
-MINIPYTHON = r"C:\MiniPython\python.exe" if Path(r"C:\MiniPython\python.exe").exists() else sys.executable
-
-# ============================================================================
-# 💬 DIRECT CHAI SKILL (bypasses MCP for reliability)
-# ============================================================================
-
-def chai_assistant_direct(query: str, usecase: str = "WiFi_QnA") -> Dict[str, Any]:
-    """
-    Query the ChAI Assistant DIRECTLY via subprocess (not MCP).
-    This is more reliable for long-running ChAI calls.
-    """
-    skill_script = SKILLS_DIR / "ChAI-Assistant" / "ask_chai_tool.py"
-    
-    if not skill_script.exists():
-        return {"error": f"Skill not found at {skill_script}", "success": False}
-    
-    client_secret = os.environ.get("CHAI_SDK_CLIENT_SECRET")
-    if not client_secret:
-        return {"error": "CHAI_SDK_CLIENT_SECRET not set", "success": False}
-    
-    cmd = [MINIPYTHON, str(skill_script), "--query", query, "--usecase", usecase]
-    
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=90,
-            cwd=str(Path(__file__).parent),
-            env={**os.environ, "CHAI_SDK_CLIENT_SECRET": client_secret}
-        )
-        
-        if result.returncode == 0:
-            return {"success": True, "response": result.stdout.strip(), "usecase": usecase, "query": query}
-        else:
-            return {"success": False, "error": result.stderr or "Unknown error", "stdout": result.stdout}
-            
-    except subprocess.TimeoutExpired:
-        return {"error": "ChAI request timed out (90s)", "success": False}
-    except Exception as e:
-        return {"error": str(e), "success": False}
 
 # ============================================================================
 # 📚 EDUCATIONAL INTRO
@@ -111,7 +66,7 @@ This demo uses the **real MCP protocol** to communicate with skills:
         │                                         │
         │  1. tools/list                          │
         │────────────────────────────────────────►│
-        │◄─── [image2mermaid, chai_wifi, ...]────│
+        │◄─── [image2mermaid, ask_cloud_model, ...]────│
         │                                         │
         │  2. tools/call {name, arguments}        │
         │────────────────────────────────────────►│
@@ -130,7 +85,7 @@ This demo uses the **real MCP protocol** to communicate with skills:
 # ============================================================================
 
 class MCPSkillsClient:
-    """MCP Client that connects to the WCS Skills Server"""
+    """MCP Client that connects to the course skills server"""
     
     def __init__(self):
         self.session: Optional[ClientSession] = None
@@ -174,20 +129,8 @@ class MCPSkillsClient:
     
     async def call_tool(self, tool_name: str, arguments: Dict) -> Dict:
         """
-        Call a tool - uses DIRECT call for ChAI, MCP for others.
-        
-        ChAI tools are called directly via subprocess for reliability
-        (MCP can timeout on long-running ChAI calls).
+        Call a tool on the MCP server (tools/call).
         """
-        # DIRECT CALL for ChAI tools (more reliable)
-        if tool_name in ["chai_wifi_qna", "chai_bluetooth_qna", "chai_general_qna"]:
-            usecase_map = {
-                "chai_wifi_qna": "WiFi_QnA",
-                "chai_bluetooth_qna": "BT_QnA",
-                "chai_general_qna": "QnA"
-            }
-            usecase = usecase_map.get(tool_name, "WiFi_QnA")
-            return chai_assistant_direct(arguments.get("query", ""), usecase)
         
         # MCP CALL for all other tools
         try:
@@ -273,26 +216,11 @@ class MCPRouter:
                 "extract": lambda text: self._extract_image_path(text)
             },
             {
-                "tool": "chai_wifi_qna",
+                "tool": "ask_cloud_model",
                 "patterns": [
-                    r"(?:what|explain|describe).*(?:wifi|wi-fi|802\.11|mld|wireless|wlan)",
-                    r"(?:wifi|wi-fi|802\.11|mld).*(?:what|how|why)",
-                ],
-                "extract": lambda text: {"query": text}
-            },
-            {
-                "tool": "chai_bluetooth_qna",
-                "patterns": [
-                    r"(?:what|explain|describe).*(?:bluetooth|bt|le audio|ble)",
-                    r"(?:bluetooth|bt|le audio|ble).*(?:what|how|why)",
-                ],
-                "extract": lambda text: {"query": text}
-            },
-            {
-                "tool": "chai_general_qna",
-                "patterns": [
-                    r"(?:intel|wireless).*(?:product|specification)",
-                    r"(?:wreq|dcr)",
+                    r"(?:what|explain|describe).*(?:wifi|wi-fi|802\.11|mld|wireless|wlan|bluetooth|\bbt\b|le audio|\bble\b)",
+                    r"(?:wifi|wi-fi|802\.11|mld|bluetooth|le audio|\bble\b).*(?:what|how|why)",
+                    r"^(?:explain|ask the (?:cloud )?model)\b",
                 ],
                 "extract": lambda text: {"query": text}
             },
@@ -403,7 +331,7 @@ def run_async(coro):
 
 def main():
     st.set_page_config(
-        page_title="🔌 WCS Skills - MCP Edition",
+        page_title="🔌 Course Skills - MCP Edition",
         page_icon="🔌",
         layout="wide",
         initial_sidebar_state="expanded"
@@ -485,7 +413,7 @@ def main():
             st.rerun()
     
     # Main content
-    st.title("🔌 WCS Skills Based Agentic Flows")
+    st.title("🔌 Course Skills: Agentic Flows")
     st.markdown("### MCP Edition - Real Model Context Protocol")
     
     # MCP indicator
@@ -547,8 +475,8 @@ def main():
                     st.success("✅ Converted to Mermaid!")
                     st.code(result.get("mermaid_code", ""), language="mermaid")
                     
-                elif routing['tool'].startswith("chai_"):
-                    st.success(f"✅ Response from {result.get('usecase', 'ChAI')}")
+                elif routing['tool'] == "ask_cloud_model":
+                    st.success(f"✅ Answer from the cloud model ({result.get('model', 'Foundry')})")
                     st.markdown(result.get("response", ""))
                     
                 elif routing['tool'] == "calculator":
@@ -604,7 +532,7 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style='text-align: center; color: gray;'>
-        <p>🔌 WCS Skills - MCP Edition | Real Model Context Protocol Implementation</p>
+        <p>🔌 Course Skills - MCP Edition | Real Model Context Protocol Implementation</p>
         <p>Server: Agents_lab14_mcp_skills_server.py | Client: Agents_lab15_mcp_skills_client.py</p>
     </div>
     """, unsafe_allow_html=True)

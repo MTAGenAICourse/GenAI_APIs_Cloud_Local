@@ -4,11 +4,12 @@ Lab 14 - A real MCP server (low-level mcp.server.Server API, stdio).
 Run from the repo root:
     Started by Lab 15; on its own: python Agents_MCP_Skills/Agents_lab14_mcp_skills_server.py
 
-The chai_* and image2mermaid tools need Intel-internal credentials; the others work anywhere.
+Tools: ask_cloud_model and image2mermaid (your Foundry deployment, Lab 01 .env keys),
+calculator, text_analyzer, web_search.
 """
 # 🔌 MCP Skills Server
 # ====================
-# A Model Context Protocol (MCP) server that exposes WCS skills as tools.
+# A Model Context Protocol (MCP) server that exposes course skills as tools.
 # 
 # This server implements the MCP specification, allowing any MCP-compatible
 # client to discover and execute skills.
@@ -19,16 +20,12 @@ The chai_* and image2mermaid tools need Intel-internal credentials; the others w
 # Or use with MCP stdio transport:
 #     python -m mcp run Agents_lab14_mcp_skills_server.py
 # 
-# Author: WCS Skills MCP Server
-# Date: February 2026
 
 
 import asyncio
 import json
 import os
 import sys
-import subprocess
-import tempfile
 import re
 from pathlib import Path
 from typing import Any, Sequence
@@ -42,15 +39,10 @@ load_dotenv(env_path)
 # Also try loading from current working directory
 load_dotenv()
 
-# Suppress SSL warnings (Intel proxy intercepts SSL)
+# Suppress SSL warnings (corporate proxies can intercept SSL)
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Debug: Print if CHAI_SDK_CLIENT_SECRET is set (to stderr so it doesn't interfere with MCP)
-if os.environ.get("CHAI_SDK_CLIENT_SECRET"):
-    print("✓ CHAI_SDK_CLIENT_SECRET is set", file=sys.stderr)
-else:
-    print("⚠ CHAI_SDK_CLIENT_SECRET is NOT set", file=sys.stderr)
 
 # MCP SDK imports
 from mcp.server import Server
@@ -67,96 +59,21 @@ from mcp.types import (
 # 📁 CONFIGURATION
 # ============================================================================
 
-SKILLS_DIR = Path(__file__).parent / ".claude" / "skills"
-MINIPYTHON = r"C:\MiniPython\python.exe"
-
-# Fallback to system Python if MiniPython not available
-if not os.path.exists(MINIPYTHON):
-    MINIPYTHON = sys.executable
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cloud_model import ask_cloud_model, image_to_mermaid, deployment   # Foundry deployment (Lab 01 keys)
 
 # ============================================================================
 # 🛠️ SKILL IMPLEMENTATIONS
 # ============================================================================
 
-async def image2mermaid_execute(image_path: str, quick_mode: bool = True, diagram_type: str = "") -> dict:
-    """Convert an image to Mermaid diagram code"""
-    skill_script = SKILLS_DIR / "Doc2Md-image2mermaid" / "image2mermaid.py"
-    
-    if not skill_script.exists():
-        return {"error": f"Skill not found at {skill_script}", "success": False}
-    
-    if not os.path.exists(image_path):
-        return {"error": f"Image file not found: {image_path}", "success": False}
-    
-    output_dir = tempfile.mkdtemp(prefix="mermaid_")
-    cmd = [MINIPYTHON, str(skill_script), image_path, "-o", output_dir]
-    
-    if quick_mode:
-        cmd.append("-q")
-    if diagram_type:
-        cmd.extend(["-t", diagram_type])
-    
-    try:
-        result = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: subprocess.run(
-                cmd, capture_output=True, text=True, timeout=120,
-                cwd=str(Path(__file__).parent)
-            )
-        )
-        
-        mermaid_files = list(Path(output_dir).glob("*.mermaid")) + list(Path(output_dir).glob("*.md"))
-        
-        if mermaid_files:
-            with open(mermaid_files[0], 'r', encoding='utf-8') as f:
-                mermaid_content = f.read()
-            return {
-                "success": True,
-                "mermaid_code": mermaid_content,
-                "output_file": str(mermaid_files[0]),
-                "image_path": image_path
-            }
-        else:
-            return {"success": False, "error": "No mermaid output generated", "stderr": result.stderr}
-            
-    except subprocess.TimeoutExpired:
-        return {"error": "Skill execution timed out (120s)", "success": False}
-    except Exception as e:
-        return {"error": str(e), "success": False}
+async def image2mermaid_execute(image_path: str, diagram_type: str = "") -> dict:
+    """Convert a diagram image to Mermaid code with the Foundry deployment's vision input."""
+    return await asyncio.get_running_loop().run_in_executor(None, image_to_mermaid, image_path, diagram_type)
 
 
-async def chai_assistant_execute(query: str, usecase: str = "WiFi_QnA") -> dict:
-    """Query the ChAI Assistant"""
-    skill_script = SKILLS_DIR / "ChAI-Assistant" / "ask_chai_tool.py"
-    
-    if not skill_script.exists():
-        return {"error": f"Skill not found at {skill_script}", "success": False}
-    
-    client_secret = os.environ.get("CHAI_SDK_CLIENT_SECRET")
-    if not client_secret:
-        return {"error": "CHAI_SDK_CLIENT_SECRET not set", "success": False}
-    
-    cmd = [MINIPYTHON, str(skill_script), "--query", query, "--usecase", usecase]
-    
-    try:
-        env = {**os.environ, "CHAI_SDK_CLIENT_SECRET": client_secret}
-        result = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: subprocess.run(
-                cmd, capture_output=True, text=True, timeout=90,
-                cwd=str(Path(__file__).parent), env=env
-            )
-        )
-        
-        if result.returncode == 0:
-            return {"success": True, "response": result.stdout.strip(), "usecase": usecase, "query": query}
-        else:
-            return {"success": False, "error": result.stderr or "Unknown error"}
-            
-    except subprocess.TimeoutExpired:
-        return {"error": "ChAI request timed out (90s)", "success": False}
-    except Exception as e:
-        return {"error": str(e), "success": False}
+async def ask_cloud_model_execute(question: str) -> dict:
+    """Answer a technical question with the Foundry deployment (Azure OpenAI v1 API)."""
+    return await asyncio.get_running_loop().run_in_executor(None, ask_cloud_model, question)
 
 
 def calculator_execute(expression: str) -> dict:
@@ -238,13 +155,13 @@ def web_search_execute(query: str, num_results: int = 5) -> dict:
             print(f"[DEBUG] Extracted location: {location}", file=sys.stderr)
             
             weather_url = f"https://wttr.in/{location}?format=j1"
-            # Use proxy for external sites (Intel corporate network)
+            # Use proxy for external sites (only if HTTP(S)_PROXY is set, e.g. on a corporate network)
             proxy = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY')
             print(f"[DEBUG] Proxy: {proxy}", file=sys.stderr)
             print(f"[DEBUG] Weather URL: {weather_url}", file=sys.stderr)
             proxies = {"http": proxy, "https": proxy} if proxy else None
             
-            # Disable SSL verification for proxy (Intel proxy intercepts SSL)
+            # Disable SSL verification for proxy (corporate proxies can intercept SSL)
             response = requests.get(
                 weather_url, 
                 timeout=15, 
@@ -300,7 +217,7 @@ def web_search_execute(query: str, num_results: int = 5) -> dict:
         from duckduckgo_search import DDGS
         print(f"[DEBUG] Trying DuckDuckGo...", file=sys.stderr)
         
-        # Use proxy for external sites (Intel corporate network)
+        # Use proxy for external sites (only if HTTP(S)_PROXY is set, e.g. on a corporate network)
         proxy = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY')
         with DDGS(proxy=proxy) as ddgs:
             results = list(ddgs.text(query_clean, max_results=num_results))
@@ -336,7 +253,7 @@ def web_search_execute(query: str, num_results: int = 5) -> dict:
         }
         
         search_url = f"https://www.google.com/search?q={quote_plus(query_clean)}&num={num_results}&hl=en"
-        # Use proxy for external sites (Intel corporate network)
+        # Use proxy for external sites (only if HTTP(S)_PROXY is set, e.g. on a corporate network)
         proxy = os.environ.get('HTTP_PROXY') or os.environ.get('HTTPS_PROXY')
         proxies = {"http": proxy, "https": proxy} if proxy else None
         response = requests.get(search_url, headers=headers, timeout=10, proxies=proxies)
@@ -387,7 +304,7 @@ def web_search_execute(query: str, num_results: int = 5) -> dict:
 # ============================================================================
 
 # Create the MCP server
-server = Server("wcs-skills-server")
+server = Server("course-skills-server")
 
 
 @server.list_tools()
@@ -399,7 +316,7 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="image2mermaid",
-            description="Convert a diagram image (PNG, JPG, etc.) to Mermaid diagram code using AI vision. Use this when the user wants to convert an image to mermaid, create a mermaid diagram from an image, or turn a picture/diagram/flowchart into code.",
+            description="Convert a diagram image (PNG, JPG, etc.) to Mermaid diagram code using the cloud model's vision. Use this when the user wants to convert an image to mermaid, create a mermaid diagram from an image, or turn a picture/diagram/flowchart into code.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -407,14 +324,9 @@ async def list_tools() -> list[Tool]:
                         "type": "string",
                         "description": "Full path to the image file to convert"
                     },
-                    "quick_mode": {
-                        "type": "boolean",
-                        "description": "Use quick single-step conversion (faster)",
-                        "default": True
-                    },
                     "diagram_type": {
                         "type": "string",
-                        "description": "Hint for diagram type (flowchart TB, sequenceDiagram, etc.)",
+                        "description": "Optional hint for the diagram type (flowchart LR, sequenceDiagram, ...)",
                         "default": ""
                     }
                 },
@@ -422,42 +334,14 @@ async def list_tools() -> list[Tool]:
             }
         ),
         Tool(
-            name="chai_wifi_qna",
-            description="Ask questions about Intel WiFi products using the ChAI WiFi_QnA assistant. Use for WiFi-related questions, MLD, 802.11, WiFi 6/7, wireless networking.",
+            name="ask_cloud_model",
+            description="Answer a technical question (Wi-Fi, Bluetooth, networking, AI, engineering) with the course's cloud model (Azure OpenAI on Microsoft Foundry). Use for explanations such as 'What is MLD in Wi-Fi 7?' or 'Explain LE Audio'.",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "The question to ask about Intel WiFi products"
-                    }
-                },
-                "required": ["query"]
-            }
-        ),
-        Tool(
-            name="chai_bluetooth_qna",
-            description="Ask questions about Intel Bluetooth products using the ChAI BT_QnA assistant. Use for Bluetooth-related questions, LE Audio, BT SIG specifications.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The question to ask about Intel Bluetooth products"
-                    }
-                },
-                "required": ["query"]
-            }
-        ),
-        Tool(
-            name="chai_general_qna",
-            description="Ask general questions about Intel Wireless products (WiFi, Bluetooth, TOP) using the ChAI QnA assistant.",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The question to ask about Intel Wireless products"
+                        "description": "The question to answer"
                     }
                 },
                 "required": ["query"]
@@ -499,7 +383,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="web_search",
-            description="Search the web for general knowledge questions. Use this when the user asks about topics NOT related to Intel products - such as history, science, current events, definitions, 'what is', 'who is', 'how does', general facts, etc.",
+            description="Search the web for general knowledge questions. Use this for general facts (not Wi-Fi/Bluetooth technical questions, which go to ask_cloud_model) - such as history, science, current events, definitions, 'what is', 'who is', 'how does', general facts, etc.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -529,15 +413,10 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent | ImageC
         if name == "image2mermaid":
             result = await image2mermaid_execute(
                 image_path=arguments["image_path"],
-                quick_mode=arguments.get("quick_mode", True),
                 diagram_type=arguments.get("diagram_type", "")
             )
-        elif name == "chai_wifi_qna":
-            result = await chai_assistant_execute(arguments["query"], "WiFi_QnA")
-        elif name == "chai_bluetooth_qna":
-            result = await chai_assistant_execute(arguments["query"], "BT_QnA")
-        elif name == "chai_general_qna":
-            result = await chai_assistant_execute(arguments["query"], "QnA")
+        elif name == "ask_cloud_model":
+            result = await ask_cloud_model_execute(arguments["query"])
         elif name == "calculator":
             result = calculator_execute(arguments["expression"])
         elif name == "text_analyzer":
@@ -565,9 +444,7 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent | ImageC
 
 async def main():
     """Run the MCP server using stdio transport"""
-    print("🔌 Starting WCS Skills MCP Server...", file=sys.stderr)
-    print(f"📁 Skills directory: {SKILLS_DIR}", file=sys.stderr)
-    print(f"🐍 Python executable: {MINIPYTHON}", file=sys.stderr)
+    print(f"🔌 Starting course skills MCP server (cloud model: {deployment()})...", file=sys.stderr)
     
     async with stdio_server() as (read_stream, write_stream):
         await server.run(

@@ -1,16 +1,17 @@
-# Labs 19–23: Skills — Shared Context, Chaining and Agent Skills
+# Labs 19–22: Skills — Shared Context, Chaining and Agent Skills
 
 A skill is a unit of agent capability that can read and write a shared context, so one skill can build on
 another's result. Lab 19 shows the pattern with keyword routing. Lab 20 puts the same skills in a LangGraph
-graph with a real LLM as the router. Lab 23 shows the other meaning of "skill": the `SKILL.md` open format.
+graph with a real LLM as the router. Lab 21 routes requests to local tools and to your cloud model.
+Lab 22 shows the other meaning of "skill": the `SKILL.md` open format.
 
 Run from the repo root (`GenAI_APIs_Cloud_Local`):
 
 ```bash
 streamlit run Agents_MCP_Skills/Agents_lab19_skills_tutorial.py
 streamlit run Agents_MCP_Skills/Agents_lab20_skills_langgraph.py
-streamlit run Agents_MCP_Skills/Agents_lab22_skills_demo.py
-python Agents_MCP_Skills/Agents_lab23_agent_skills/openvino-course-labs/scripts/check_setup.py
+streamlit run Agents_MCP_Skills/Agents_lab21_skills_demo.py
+python Agents_MCP_Skills/Agents_lab22_agent_skills/openvino-course-labs/scripts/check_setup.py
 ```
 
 To run two apps at once, give the second one its own port: `--server.port 8502`.
@@ -21,13 +22,16 @@ To run two apps at once, give the second one its own port: `--server.port 8502`.
 
 1. Finish the Part 1 setup in the repo root `README.md` (venv, models).
 2. Install the Part 2 packages from the repo root: `pip install -r Agents_MCP_Skills/requirements.txt`
-   (adds `langgraph` for Lab 20, and the web search packages for Lab 22).
+   (adds `langgraph` for Lab 20, and the web search packages for Lab 21).
 3. Lab 20 brains (pick at least one):
    - **Local:** download a small LLM into the repo root. TinyLlama is the Lab 03 model:
      `hf download OpenVINO/TinyLlama-1.1B-Chat-v1.0-int4-ov --local-dir TinyLlama-1.1B-Chat-v1.0`.
      Qwen3-1.7B is expected at `./Qwen3-1.7B-int4-ov`
      (for example `hf download OpenVINO/Qwen3-1.7B-int4-ov --local-dir Qwen3-1.7B-int4-ov`).
    - **Cloud:** the same `.env` keys as Lab 01: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`.
+
+4. Lab 21's cloud skills (`ask_cloud_model`, `image2mermaid`) use the same Lab 01 `.env` keys. The other
+   Lab 21 skills need no keys.
 
 Lab 19 needs no model and no network.
 
@@ -219,32 +223,37 @@ would always find "weather"). Good for a dry run; use a real brain to see actual
 - Ask an indirect question, such as "Should I take an umbrella in London?". Watch `select_skill` and `decide_chain`.
 - Compare TinyLlama, Qwen3 and the cloud brain on the same five queries: right skill? how long?
 
-### Lab 21 (optional, Intel only)
+---
 
-`Agents_lab21_skills_langgraph_chai.py` is Lab 20 with Intel's internal ChAI service as the cloud brain
-(sidebar option "ChAI Claude Sonnet 4.5 (Cloud)"). It needs `CHAI_SDK_CLIENT_SECRET` and `chai_utilities.py`.
-Outside Intel, use Lab 20.
+## Lab 21: skills that call real tools
+
+Lab 21 routes requests to five skills. Three run locally and two call your cloud model through `cloud_model.py`
+(your Microsoft Foundry deployment, the Lab 01 `.env` keys):
+
+| Skill | Runs on | Example |
+| --- | --- | --- |
+| `image2mermaid` | cloud model (vision) | upload a diagram in the sidebar and press **🔄 Convert to Mermaid** |
+| `ask_cloud_model` | cloud model | `What is MLD in WiFi 7?`, `Explain LE Audio in Bluetooth` |
+| `calculator` | local | `calculate (3 + 4) * 6` -> 42 |
+| `text_analyzer` | local | `Analyze sentiment: This product is amazing!` |
+| `web_search` | internet | `What is the capital of France?` |
+
+Type a request and press **🚀 Execute**, or **🔍 Analyze Only** to see the routing without running it.
+Wi-Fi, Bluetooth, MLD and LE Audio questions go to `ask_cloud_model`; general "what is" questions go to
+`web_search`. Measured on 2026-11-23 on the instructor laptop with deployment `gpt-5.4`, `ask_cloud_model`
+answered "What is MLD in Wi-Fi 7?" in 4.4 s, and `image_to_mermaid` turned a 3-box flowchart image into
+`flowchart LR  Camera --> VLM --> Decision` in 2.7 s. These are the same helpers as the Lab 14 MCP tools.
 
 ---
 
-## Lab 22: skills that call real tools
+## Lab 22: Agent Skills (`SKILL.md`)
 
-Lab 22 routes requests to built-in skills (calculator, text analyzer, web search) and to skills in a
-`.claude/skills` folder. Type a request and press **🚀 Execute**, or **🔍 Analyze Only** to see the routing
-without running it. Try `calculate (3 + 4) * 6` (42) and `What is the capital of France?` (web search).
-The ChAI and Image2Mermaid skills, like the `chai_*` tools in Labs 14–15, need Intel-internal credentials;
-they are optional and the other skills work without them.
-
----
-
-## Lab 23: Agent Skills (`SKILL.md`)
-
-Labs 19–22 build skills as Python classes inside your own agent. Lab 23 shows the open **Agent Skills** format:
+Labs 19–21 build skills as Python classes inside your own agent. Lab 22 shows the open **Agent Skills** format:
 a folder with a `SKILL.md` file (YAML front matter with `name` and `description`, then Markdown instructions)
 plus optional scripts. Claude Code, GitHub Copilot in VS Code and other agents load these on demand.
 
 ```text
-Agents_lab23_agent_skills/openvino-course-labs/
+Agents_lab22_agent_skills/openvino-course-labs/
 ├── SKILL.md
 └── scripts/
     └── check_setup.py
@@ -255,7 +264,7 @@ it loads the full `SKILL.md`, and runs the bundled script only if needed. This k
 context window. To install, copy the `openvino-course-labs` folder to `.claude/skills/` (Claude Code) or
 `.github/skills/` (Copilot in VS Code), then ask "Is my laptop ready for Lab 16?".
 
-| | Python Skills pattern (19–22) | Agent Skills (23) |
+| | Python Skills pattern (19–21) | Agent Skills (22) |
 | --- | --- | --- |
 | What it is | A class in your agent's code | A folder of instructions and scripts |
 | Who uses it | Your own agent | Any compatible agent |
@@ -263,7 +272,7 @@ context window. To install, copy the `openvino-course-labs` folder to `.claude/s
 | State | Shared `SkillContext` | The agent's conversation |
 | Good for | Logic inside an app you build | Reusable know-how for coding agents |
 
-Details and the exercise are in `Agents_lab23_agent_skills/README.md`.
+Details and the exercise are in `Agents_lab22_agent_skills/README.md`.
 
 ---
 
@@ -274,8 +283,8 @@ Details and the exercise are in `Agents_lab23_agent_skills/README.md`.
 | Context panel is empty | Run a skill first; the context starts empty. |
 | Recommendations ignore the weather | The random weather may not hit a rule (rain, >25 °C, <10 °C). Ask again. |
 | Lab 20 "simulation mode" warning | The local model folder is missing from the repo root. |
-| Lab 20 cloud errors | Check the Lab 01 `.env` keys; behind a proxy add `.openai.azure.com` to `NO_PROXY` ([details](../README_Reproduce_Demo.md#proxy-set-check-unset)). |
+| Lab 20 cloud brain or Lab 21 `ask_cloud_model` / `image2mermaid` errors | Check the Lab 01 `.env` keys; behind a proxy add `.openai.azure.com` to `NO_PROXY` ([details](../README_Reproduce_Demo.md#proxy-set-check-unset)). |
 | Port already in use | Add `--server.port 8502`. |
 
 Further reading: [LangGraph](https://langchain-ai.github.io/langgraph/) · [ReAct pattern](https://arxiv.org/abs/2210.03629) ·
-[agentskills.io](https://agentskills.io). Previous: `README_MCP.md`. Next: `README_Multimodal.md` (Lab 24).
+[agentskills.io](https://agentskills.io). Previous: `README_MCP.md`. Next: `README_Multimodal.md` (Lab 23).

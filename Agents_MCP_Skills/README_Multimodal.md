@@ -1,13 +1,13 @@
-# Lab 24: The Multimodal Agent (Capstone)
+# Lab 23: The Multimodal Agent (Capstone)
 
 One Streamlit app that runs the "analyze, understand, create" cycle on your laptop: the local Phi-3.5-vision
 model inspects an image or video frames in several steps, checks its own answers, and writes a prompt you can
-feed to Stable Diffusion. It ties together Part 1 (See, Create) and the agent patterns of Labs 11–23.
+feed to Stable Diffusion. It ties together Part 1 (See, Create) and the agent patterns of Labs 11–22.
 
 Run from the repo root (`GenAI_APIs_Cloud_Local`):
 
 ```bash
-streamlit run Agents_MCP_Skills/Agents_lab24_multimodal_agent.py
+streamlit run Agents_MCP_Skills/Agents_lab23_multimodal_agent.py
 ```
 
 ---
@@ -15,7 +15,7 @@ streamlit run Agents_MCP_Skills/Agents_lab24_multimodal_agent.py
 ## Setup
 
 1. Finish the Part 1 setup in the repo root `README.md` (venv, `pip install -r requirements.txt`; it includes
-   `opencv-python`). Lab 24 needs no extra packages.
+   `opencv-python`). Lab 23 needs no extra packages.
 2. Download the vision model into the repo root, as in Lab 04:
 
    ```bash
@@ -45,7 +45,7 @@ It runs locally with OpenVINO GenAI (`VLMPipeline`), INT4-quantized to fit in la
 
 ### What makes it an agent
 
-| Capability | In Lab 24 |
+| Capability | In Lab 23 |
 | --- | --- |
 | Plan | A predefined list of analysis steps (the workflow) |
 | Execute | One VLM call per step |
@@ -64,7 +64,7 @@ natural photography. Create: "A serene evening beach, warm sunset colors, golden
 
 ### How it is built
 
-Lab 24 runs its workflow as a plain Python loop; it does not import LangGraph (its intro text says so). The retry idea is the same one Lab 12 implements as a LangGraph graph;
+Lab 23 runs its workflow as a plain Python loop; it does not import LangGraph (its intro text says so). The retry idea is the same one Lab 12 implements as a LangGraph graph;
 compare the two in the exercises.
 
 ---
@@ -225,9 +225,9 @@ Step 3  Creative Prompt "A beach sunset with vibrant orange sky, golden sun refl
 
 1. **Image types.** Run `comprehensive` on a photo of a person, a landscape and a document.
    Which did the model handle best? What did it miss or invent?
-2. **Loop vs graph.** Compare Lab 24's retry loop with Lab 12's graph. Fill in the table:
+2. **Loop vs graph.** Compare Lab 23's retry loop with Lab 12's graph. Fill in the table:
 
-   | Aspect | Lab 24 (loop) | Lab 12 (LangGraph) | Which is easier to change? |
+   | Aspect | Lab 23 (loop) | Lab 12 (LangGraph) | Which is easier to change? |
    | --- | --- | --- | --- |
    | Where the retry lives | | | |
    | How progress is reported | | | |
@@ -257,7 +257,7 @@ Step 3  Creative Prompt "A beach sunset with vibrant orange sky, golden sun refl
 
 ---
 
-## Where Lab 24 fits
+## Where Lab 23 fits
 
 | Lab | Idea used here |
 | --- | --- |
@@ -265,7 +265,7 @@ Step 3  Creative Prompt "A beach sunset with vibrant orange sky, golden sun refl
 | 09–10 (Part 1) | Stable Diffusion for the Create step |
 | 11–12 | Multi-step visual workflow; self-check with retries (12) |
 | 13–18 | Tools; local models as MCP tools (16) called by a cloud agent (17, 18) |
-| 19–23 | Shared context and chaining between steps |
+| 19–22 | Shared context and chaining between steps |
 
 ---
 
@@ -283,4 +283,4 @@ Step 3  Creative Prompt "A beach sunset with vibrant orange sky, golden sun refl
 | **🎨 Generate Image** only shows a warning | Expected; generate with Lab 09 or 10. |
 
 Further reading: [OpenVINO GenAI](https://docs.openvino.ai/) · [Phi-3.5-vision](https://huggingface.co/microsoft/Phi-3.5-vision-instruct).
-Previous: `README_LangGraph.md` (Labs 11–12), `README_MCP.md` (13–18), `README_Skills.md` (19–23).
+Previous: `README_LangGraph.md` (Labs 11–12), `README_MCP.md` (13–18), `README_Skills.md` (19–22).

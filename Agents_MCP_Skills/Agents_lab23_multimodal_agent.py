@@ -1,8 +1,8 @@
 """
-Lab 24 - Capstone: the multimodal agent (See -> analyze -> decide -> create a prompt).
+Lab 23 - Capstone: the multimodal agent (See -> analyze -> decide -> create a prompt).
 
 Run from the repo root:
-    streamlit run Agents_MCP_Skills/Agents_lab24_multimodal_agent.py
+    streamlit run Agents_MCP_Skills/Agents_lab23_multimodal_agent.py
 
 Design challenge: wire Hear (Lab 07), See (04-06), Reason (01-02), Act (12-18), Create (09) into one app.
 """

@@ -1,6 +1,6 @@
-# Lab 23 - Agent Skills: package know-how for any coding agent
+# Lab 22 - Agent Skills: package know-how for any coding agent
 
-Labs 19-22 build **Skills as Python classes** inside your own agent (triggers, `SkillContext`, chaining).
+Labs 19-21 build **Skills as Python classes** inside your own agent (triggers, `SkillContext`, chaining).
 This lab shows the other meaning of "skill" you will meet in industry: **Agent Skills**, an open format
 (a folder with a `SKILL.md` file) that Claude Code, GitHub Copilot in VS Code and other agents load on demand.
 
@@ -24,7 +24,7 @@ This *progressive disclosure* lets an agent carry many skills without filling it
 Run the script yourself first (from the repo root):
 
 ```bash
-python Agents_MCP_Skills/Agents_lab23_agent_skills/openvino-course-labs/scripts/check_setup.py
+python Agents_MCP_Skills/Agents_lab22_agent_skills/openvino-course-labs/scripts/check_setup.py
 ```
 
 Then install the skill for your coding agent by copying the `openvino-course-labs` folder:
@@ -37,12 +37,12 @@ Then install the skill for your coding agent by copying the `openvino-course-lab
 Ask the agent: *"Is my laptop ready for Lab 16?"* or *"Lab 04 rambles after its answer, why?"*
 and watch it load the skill, run `check_setup.py` and answer from the instructions.
 
-## Python Skills (Labs 19-22) vs Agent Skills (Lab 23)
+## Python Skills (Labs 19-21) vs Agent Skills (Lab 22)
 
 | | Python Skills pattern | Agent Skills (`SKILL.md`) |
 | --- | --- | --- |
 | What it is | A class in your agent's code | A folder of instructions + scripts |
-| Who uses it | Your own agent (Labs 19-22) | Any compatible agent (Claude Code, Copilot, ...) |
+| Who uses it | Your own agent (Labs 19-21) | Any compatible agent (Claude Code, Copilot, ...) |
 | Selected by | Triggers / confidence score / LLM router | The agent, by matching the `description` |
 | State | Shared `SkillContext` | The agent's conversation |
 | Best for | Internal logic of an app you build | Reusable know-how for coding agents |
