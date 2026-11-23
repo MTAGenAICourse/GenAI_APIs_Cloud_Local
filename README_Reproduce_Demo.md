@@ -68,30 +68,18 @@ Slide numbers are the page numbers printed in the slide footers.
 
 ### Before class (15 minutes)
 
-1. **Make sure Azure OpenAI bypasses the corporate proxy.** A Foundry resource with public access disabled only accepts traffic
-   from its private network. If requests go through the corporate proxy (`HTTPS_PROXY`), Lab 01 fails with
-   `403 Public access is disabled`. Add `.openai.azure.com` to `NO_PROXY` yourself. The labs never change proxy settings.
+1. **Bypass the corporate proxy for Azure OpenAI (Labs 01 and 17 only).** A Foundry resource with public access
+   disabled only accepts traffic from its private network. Through the corporate proxy (`HTTPS_PROXY`) Lab 01 fails
+   with `403 Public access is disabled`. Add `.openai.azure.com` to `NO_PROXY` **in the terminal you will demo from**:
 
-   Permanent, for new terminals (run once):
-
-   ```cmd
-   setx NO_PROXY "%NO_PROXY%,.openai.azure.com"
+   ```powershell
+   $env:NO_PROXY += ",.openai.azure.com"
    ```
 
-   For a terminal that is already open:
-
-   | Shell | Command |
-   | --- | --- |
-   | PowerShell | `$env:NO_PROXY = "$env:NO_PROXY,.openai.azure.com"` |
-   | Command Prompt | `set NO_PROXY=%NO_PROXY%,.openai.azure.com` |
-   | Git Bash | `export NO_PROXY="$NO_PROXY,.openai.azure.com" no_proxy="$no_proxy,.openai.azure.com"` |
-
-   To check (PowerShell): `$env:NO_PROXY -split ',' | Select-String openai` should print `.openai.azure.com`.
-   Putting `NO_PROXY` in `.env` doesn't work, because `load_dotenv()` doesn't override a value already set in the shell.
-   `setx` cuts values off at 1024 characters; if your list is longer, edit it in Windows Settings → Environment variables.
-   Students on their own Azure for Students resources don't need this, because those resources allow public access.
-
-2. **Open a new terminal** after running `setx`. Terminals that were already open keep the old `NO_PROXY`.
+   Closing that terminal undoes it — nothing on the computer changes. Other shells, the permanent variant and how
+   to undo it: [Proxy: set, check, unset](#proxy-set-check-unset). The labs never change proxy settings.
+   Students on their own Azure for Students resources skip this step.
+2. **Check it** in the same terminal: `$env:NO_PROXY -split ','` must list `.openai.azure.com`.
 3. **Activate the environment** and confirm the devices:
 
    ```bash
@@ -236,11 +224,73 @@ python GenAI_APIs_lab07_speech_basics.py --record 5
 
 ---
 
+## Proxy: set, check, unset
+
+Only for Labs 01 and 17, and only when your Foundry resource is private and the laptop is behind a corporate proxy.
+
+### Option A — this terminal only (recommended)
+
+Nothing on the computer changes; closing the terminal is the undo.
+
+| Shell | Set | Check | Unset (or close the terminal) |
+| --- | --- | --- | --- |
+| PowerShell | `$env:NO_PROXY += ",.openai.azure.com"` | `$env:NO_PROXY -split ','` | `$env:NO_PROXY = ($env:NO_PROXY -split ',' \| ? { $_ -ne '.openai.azure.com' }) -join ','` |
+| Command Prompt | `set NO_PROXY=%NO_PROXY%,.openai.azure.com` | `echo %NO_PROXY%` | close the terminal |
+| Git Bash | `export NO_PROXY="$NO_PROXY,.openai.azure.com"` | `echo "$NO_PROXY" \| tr , '\n'` | `export NO_PROXY="${NO_PROXY//,.openai.azure.com/}"` |
+
+In Git Bash set only `NO_PROXY`, not a separate lowercase `no_proxy`: Windows programs see both names as one
+variable, and a second, shorter copy can replace your full list.
+
+### Option B — permanent for your Windows user
+
+Use this only if you need it in every new terminal. Run in PowerShell; open a **new** terminal afterwards.
+
+Save a copy of the current value first:
+
+```powershell
+[Environment]::GetEnvironmentVariable('NO_PROXY','User') | Out-File "$HOME\no_proxy_backup.txt"
+```
+
+Add only `.openai.azure.com` (safe to run twice):
+
+```powershell
+$v = [Environment]::GetEnvironmentVariable('NO_PROXY','User')
+if (($v -split ',') -notcontains '.openai.azure.com') {
+  [Environment]::SetEnvironmentVariable('NO_PROXY', (@($v -split ',' | ? { $_ }) + '.openai.azure.com') -join ',', 'User') }
+```
+
+**After class — remove only that entry and keep everything else:**
+
+```powershell
+$v = [Environment]::GetEnvironmentVariable('NO_PROXY','User')
+[Environment]::SetEnvironmentVariable('NO_PROXY', (($v -split ',') | ? { $_ -and $_ -ne '.openai.azure.com' }) -join ',', 'User')
+```
+
+Check the permanent value: `[Environment]::GetEnvironmentVariable('NO_PROXY','User')`.
+If anything looks wrong, restore the saved copy:
+
+```powershell
+[Environment]::SetEnvironmentVariable('NO_PROXY', (Get-Content "$HOME\no_proxy_backup.txt" -Raw).Trim(), 'User')
+```
+
+### Avoid
+
+- **Deleting `NO_PROXY`.** It also holds your company's list (localhost, internal domains); without it that
+  traffic goes through the proxy and internal tools break.
+- **`setx NO_PROXY "%NO_PROXY%,.openai.azure.com"`.** It copies whatever the current terminal holds (including
+  temporary additions) into the permanent value, adds a duplicate every time it runs, and cuts values at
+  1024 characters.
+- **Putting `NO_PROXY` in `.env`.** `load_dotenv()` doesn't override a variable that is already set.
+- **Forgetting open terminals.** After a permanent change *or its undo*, terminals that were already open keep
+  the old value — open a new one.
+
+---
+
 ## If something goes wrong
 
 | Symptom | Fix |
 | --- | --- |
-| Lab 01: `403 Public access is disabled` | The terminal is still using the corporate proxy. Open a **new** terminal (`NO_PROXY` must contain `.openai.azure.com`). See [Before class](#before-class-15-minutes). |
+| Lab 01: `403 Public access is disabled` | The terminal is still using the corporate proxy. Add `.openai.azure.com` to `NO_PROXY` in this terminal — see [Proxy: set, check, unset](#proxy-set-check-unset). |
 | Lab 01: `404 DeploymentNotFound` | `AZURE_OPENAI_DEPLOYMENT` must name a deployment that exists on the resource. |
 | Lab 02: `server_side_fallback not supported` | Expected on some workspaces. The script retries automatically without fallback. |
 | First GPU run takes 15+ s | GPU compilation on first load. Warm the model up before class, or use CPU. |

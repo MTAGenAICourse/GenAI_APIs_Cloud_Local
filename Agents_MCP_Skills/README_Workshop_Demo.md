@@ -33,9 +33,9 @@ Run from the repo root.
 
 ## Before class (15 minutes)
 
-1. **Proxy (Lab 17 only).** If your Foundry resource is private and you are behind a corporate proxy, add
-   `.openai.azure.com` to `NO_PROXY` yourself and open a new terminal — the labs never change proxy settings.
-   Commands for each shell: [Part 1 guide → Before class](../README_Reproduce_Demo.md#before-class-15-minutes).
+1. **Proxy (Lab 17 only).** If your Foundry resource is private and you are behind a corporate proxy, run
+   `$env:NO_PROXY += ",.openai.azure.com"` in the PowerShell terminal you demo from. Closing it undoes the change.
+   Other shells, the permanent variant and its undo: [Proxy: set, check, unset](../README_Reproduce_Demo.md#proxy-set-check-unset).
    Students on their own Azure for Students resources don't need this.
 2. **Activate the environment and check the setup** (this is also the Lab 23 demo, so leave the output on screen):
 
@@ -200,11 +200,20 @@ streamlit run Agents_MCP_Skills/Agents_lab24_multimodal_agent.py
 
 ---
 
+## After class
+
+- **Proxy:** close the demo terminal. If you made the permanent change (Option B), run the
+  ["After class — remove only that entry"](../README_Reproduce_Demo.md#option-b--permanent-for-your-windows-user)
+  command, then open a new terminal and check that `NO_PROXY` no longer lists `.openai.azure.com`.
+- Stop any Streamlit apps still running (Ctrl+C in their terminals).
+
+---
+
 ## If something goes wrong
 
 | Symptom | Fix |
 | --- | --- |
-| Lab 17: `403 Public access is disabled` | The terminal still uses the corporate proxy. Open a **new** terminal with `.openai.azure.com` in `NO_PROXY`. |
+| Lab 17: `403 Public access is disabled` | The terminal still uses the corporate proxy. Add `.openai.azure.com` to `NO_PROXY` in this terminal ([how](../README_Reproduce_Demo.md#proxy-set-check-unset)). |
 | Lab 17: `404 DeploymentNotFound` | `AZURE_OPENAI_DEPLOYMENT` must name a deployment that exists on your resource. |
 | Lab 18: `server-side fallback not enabled` | Expected on some workspaces; the script continues without it. |
 | Lab 16/17/18: `Model folder not found` | Download the model into the repo root, or set `LAB_MODELS_DIR` to where it is. |

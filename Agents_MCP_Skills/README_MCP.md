@@ -29,7 +29,7 @@ python Agents_MCP_Skills/Agents_lab18_mcp_agent_claude.py            # Claude Op
    `stable-diffusion-v1-5-int8-ov`, all in the repo root.
 
 Behind a corporate proxy with a private Foundry resource, add `.openai.azure.com` to `NO_PROXY` and open a new
-terminal; see [README_Reproduce_Demo.md](../README_Reproduce_Demo.md#before-class-15-minutes) in the repo root.
+terminal; see [README_Reproduce_Demo.md](../README_Reproduce_Demo.md#proxy-set-check-unset) in the repo root.
 
 ---
 

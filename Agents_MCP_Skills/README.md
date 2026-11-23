@@ -70,4 +70,4 @@ Real agents combine them: LangGraph orchestrates, Skills hold the logic, MCP con
   the tool's short text answer. That is a cost and privacy decision you should be able to justify in your project.
 - **Device.** Labs default to CPU; `LAB_DEVICE=GPU` for Lab 16, the sidebar device choice in the Streamlit labs.
 - **Proxy.** Lab 17 against a private Foundry resource behind a corporate proxy needs `.openai.azure.com` in
-  `NO_PROXY` — see [README_Workshop_Demo.md](README_Workshop_Demo.md#before-class-15-minutes).
+  `NO_PROXY` — see [Proxy: set, check, unset](../README_Reproduce_Demo.md#proxy-set-check-unset).

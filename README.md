@@ -69,7 +69,7 @@ hf download OpenVINO/stable-diffusion-v1-5-int8-ov    --local-dir stable-diffusi
 - **Proxy.** The labs never read or change proxy variables. On a home network, or with your own Azure for Students
   resource, nothing is needed. Behind a corporate proxy, Labs 03–10 work with your existing settings; Lab 01 against
   a Foundry resource with public access disabled needs `.openai.azure.com` in `NO_PROXY` — see
-  [README_Reproduce_Demo.md](README_Reproduce_Demo.md#before-class-15-minutes).
+  [README_Reproduce_Demo.md](README_Reproduce_Demo.md#proxy-set-check-unset).
 - **Device.** Start on `CPU`, then try `GPU` (or `NPU`) and compare speed. The vision model is about 3× faster on an integrated GPU.
   Small models such as Whisper-base spend ~15 s compiling for the GPU, so the CPU wins there.
 - **Phi-3.5-vision stop token.** The samples set `stop_token_ids = {32007}` so the model stops at `<|end|>`; without it the model rambles.

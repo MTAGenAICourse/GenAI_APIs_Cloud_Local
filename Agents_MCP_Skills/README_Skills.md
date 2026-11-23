@@ -274,7 +274,7 @@ Details and the exercise are in `Agents_lab23_agent_skills/README.md`.
 | Context panel is empty | Run a skill first; the context starts empty. |
 | Recommendations ignore the weather | The random weather may not hit a rule (rain, >25 °C, <10 °C). Ask again. |
 | Lab 20 "simulation mode" warning | The local model folder is missing from the repo root. |
-| Lab 20 cloud errors | Check the Lab 01 `.env` keys; behind a proxy add `.openai.azure.com` to `NO_PROXY` ([details](../README_Reproduce_Demo.md#before-class-15-minutes)). |
+| Lab 20 cloud errors | Check the Lab 01 `.env` keys; behind a proxy add `.openai.azure.com` to `NO_PROXY` ([details](../README_Reproduce_Demo.md#proxy-set-check-unset)). |
 | Port already in use | Add `--server.port 8502`. |
 
 Further reading: [LangGraph](https://langchain-ai.github.io/langgraph/) · [ReAct pattern](https://arxiv.org/abs/2210.03629) ·
