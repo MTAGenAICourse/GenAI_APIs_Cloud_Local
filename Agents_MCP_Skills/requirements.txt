@@ -1,0 +1,9 @@
+# Labs 11-24 (agents, MCP, Skills). Install from the repo root:
+#   pip install -r Agents_MCP_Skills/requirements.txt
+-r ../requirements.txt     # Part 1: openai, anthropic, openvino-genai, streamlit, ...
+
+langgraph>=1.0             # Labs 12, 20, 21
+mcp>=1.20                  # Labs 14-18 (FastMCP server in 16, stdio clients in 15, 17, 18)
+duckduckgo_search>=8.0     # web_search tool (Labs 14, 15, 22)
+requests>=2.28.0
+truststore>=0.10.0         # OS certificate store behind corporate proxies (chai tools)

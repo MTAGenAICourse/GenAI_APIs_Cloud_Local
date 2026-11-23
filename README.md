@@ -3,7 +3,10 @@
 Hands-on labs for **Practical Applications of Generative AI** (The Academic College of Tel Aviv–Jaffa, 2026–2027), part 1 of the PAGA-2 session:
 call state-of-the-art models **in the cloud** (GPT-6.1 Sol, Claude Opus 5.5), then run open models **locally** with OpenVINO GenAI (text, vision, speech, images).
 
-The agent labs (LangGraph, MCP, Skills) are in [OPENVINO-GENAI-SAMPLES](https://github.com/MTAGenAICourse/OPENVINO-GENAI-SAMPLES).
+**Part 2 — agents, MCP and Skills (Labs 11–24)** is in [Agents_MCP_Skills/](Agents_MCP_Skills/README.md):
+LangGraph workflows, MCP servers and clients (including your local OpenVINO models as MCP tools for a GPT or Claude agent),
+Python Skills and Agent Skills (`SKILL.md`), and a multimodal capstone. Live demo run sheet:
+[Agents_MCP_Skills/README_Workshop_Demo.md](Agents_MCP_Skills/README_Workshop_Demo.md).
 
 **Step-by-step reproduction (expected output and timings for every lab) and the instructor's live demo run sheet:
 [README_Reproduce_Demo.md](README_Reproduce_Demo.md).**
