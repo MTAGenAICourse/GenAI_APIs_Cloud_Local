@@ -1,6 +1,7 @@
 # Workshop live demo guide (PAGA-3: Agents, MCP and Skills)
 
-A run sheet for demoing Labs 11–24 live, in the order of the PAGA-3 hands-on deck.
+A run sheet for demoing Labs 11–24 live, in the order of the PAGA-3 hands-on deck
+([PAGA-3_Agents_MCP_Skills.pptx](PAGA-3_Agents_MCP_Skills.pptx), in this folder; slide numbers below refer to it).
 Each step gives the command, what to show, what students should see, how long it takes and the talking points.
 Timings were measured on the instructor laptop (Intel CPU, integrated GPU and NPU, OpenVINO GenAI 2025.4):
 Labs 16–18 and 20 on 2026-11-23, the others on 2026-11-09. Your numbers will differ.

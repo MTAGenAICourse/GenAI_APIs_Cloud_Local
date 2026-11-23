@@ -5,6 +5,7 @@ You build the same ideas three ways — **LangGraph** workflows, **MCP** tools, 
 multimodal agent that combines them.
 
 Part 1 (Labs 01–10: cloud APIs and local OpenVINO models) is in the [repo root](../README.md).
+Slides: [PAGA-3_Agents_MCP_Skills.pptx](PAGA-3_Agents_MCP_Skills.pptx) (21 slides, in lab order).
 Reproduce every lab, and the instructor's live demo run sheet: [README_Workshop_Demo.md](README_Workshop_Demo.md).
 
 ## Labs
