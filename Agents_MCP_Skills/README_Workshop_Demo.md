@@ -7,6 +7,7 @@ Timings were measured on the instructor laptop (Intel CPU, integrated GPU and NP
 Labs 16–18 and 20 on 2026-11-23, the others on 2026-11-09. The cloud helpers in `cloud_model.py` (used by Labs 14,
 15 and 21) were timed on 2026-11-23 with the Foundry deployment `gpt-5.4`. Your numbers will differ.
 
+What to say on each slide, and which concepts each lab illustrates: [PAGA-3_HandsOn_Speaker_Notes.md](PAGA-3_HandsOn_Speaker_Notes.md).
 For student self-study, use the [lab table in README.md](README.md#labs) and [Reproduce every lab](#reproduce-every-lab) below.
 
 ---

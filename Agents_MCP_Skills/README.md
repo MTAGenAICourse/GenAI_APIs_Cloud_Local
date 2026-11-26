@@ -6,6 +6,7 @@ multimodal agent that combines them.
 
 Part 1 (Labs 01–10: cloud APIs and local OpenVINO models) is in the [repo root](../README.md).
 Slides: [PAGA-3_Agents_MCP_Skills.pptx](PAGA-3_Agents_MCP_Skills.pptx) (21 slides, in lab order).
+Speaker notes for presenting it, slide by slide with the concepts to highlight in each lab: [PAGA-3_HandsOn_Speaker_Notes.md](PAGA-3_HandsOn_Speaker_Notes.md).
 Reproduce every lab, and the instructor's live demo run sheet: [README_Workshop_Demo.md](README_Workshop_Demo.md).
 
 ## Labs
